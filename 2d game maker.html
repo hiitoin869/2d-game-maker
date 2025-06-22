@@ -1,0 +1,1477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2D Game Maker</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for the Inter font and overall look */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1a202c; /* Dark background */
+            color: #e2e8f0; /* Light text */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        /* Canvas styling */
+        canvas {
+            border: 2px solid #4a5568; /* Border for the game area */
+            background-color: #2d3748; /* Darker background for canvas */
+            cursor: default; /* Default cursor for canvas */
+            border-radius: 0.5rem; /* Rounded corners */
+        }
+
+        /* Textarea for code input and output */
+        textarea {
+            background-color: #2d3748; /* Dark background */
+            border: 1px solid #4a5568; /* Border */
+            color: #f7fafc; /* Light text */
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace; /* Monospace font for code */
+            resize: vertical; /* Allow vertical resizing */
+            border-radius: 0.5rem; /* Rounded corners */
+            padding: 10px;
+        }
+
+        /* General button styling */
+        .btn {
+            padding: 10px 20px;
+            border-radius: 0.5rem;
+            font-weight: bold;
+            transition: background-color 0.2s, transform 0.2s;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Primary button style */
+        .btn-primary {
+            background-color: #4299e1; /* Blue */
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #3182ce; /* Darker blue on hover */
+            transform: translateY(-1px); /* Slight lift */
+        }
+
+        /* Secondary button style */
+        .btn-secondary {
+            background-color: #4a5568; /* Gray */
+            color: white;
+        }
+        .btn-secondary:hover {
+            background-color: #2d3748; /* Darker gray on hover */
+            transform: translateY(-1px);
+        }
+
+        /* Active button style */
+        .btn-active {
+            background-color: #38b2ac; /* Teal for active state */
+            color: white;
+        }
+
+        /* Red button for Stop */
+        .btn-danger {
+            background-color: #e53e3e; /* Red */
+            color: white;
+        }
+        .btn-danger:hover {
+            background-color: #c53030; /* Darker red */
+            transform: translateY(-1px);
+        }
+
+        /* Modal styling */
+        .modal {
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: #2d3748;
+            margin: auto;
+            padding: 25px;
+            border-radius: 0.5rem;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            text-align: center;
+            color: #e2e8f0;
+            max-width: 400px;
+        }
+
+        .modal-content h3 {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            color: #4299e1;
+        }
+
+        .modal-content p {
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        .modal-close-btn {
+            background-color: #4299e1;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .modal-close-btn:hover {
+            background-color: #3182ce;
+        }
+
+        /* Number input and select styling */
+        input[type="number"], select, input[type="text"] { /* Added text input */
+            background-color: #2d3748;
+            border: 1px solid #4a5568;
+            color: #f7fafc;
+            padding: 8px 12px;
+            border-radius: 0.25rem;
+            width: 80px; /* Smaller width for number input */
+            text-align: center;
+        }
+        select {
+            width: 140px; /* Adjust width for select dropdown to fit text */
+        }
+        input[type="text"] {
+            width: 180px; /* Wider for game name */
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100 p-8 flex flex-col items-center min-h-screen">
+
+    <!-- Main Application Container -->
+    <div id="app-container" class="w-full max-w-5xl bg-gray-800 rounded-lg shadow-xl p-6">
+
+        <!-- Home Screen -->
+        <div id="home-screen" class="text-center p-10 flex flex-col items-center justify-center min-h-[400px]">
+            <h1 class="text-5xl font-extrabold mb-6 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-600">
+                2D Python Game Maker
+            </h1>
+            <p class="text-xl mb-8 text-gray-300">
+                Visually design your game and generate Pygame code!
+            </p>
+            <button id="start-game-maker-btn" class="btn btn-primary text-xl px-8 py-4">
+                Start Creating!
+            </button>
+        </div>
+
+        <!-- Sandbox Screen (hidden by default) -->
+        <div id="sandbox-screen" class="hidden flex flex-col lg:flex-row gap-6">
+
+            <!-- Left Panel: Canvas and Controls -->
+            <div class="flex-1 flex flex-col items-center">
+                <h2 class="text-3xl font-bold mb-4 text-blue-300">Game Design Sandbox</h2>
+                <canvas id="gameCanvas" width="600" height="400" class="rounded-lg shadow-lg mb-6"></canvas>
+
+                <!-- Element Selection Buttons (visible in edit mode) -->
+                <div id="edit-controls" class="flex flex-wrap gap-3 mb-6 justify-center items-center">
+                    <button id="select-player-btn" class="btn btn-secondary flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path></svg>
+                        Add Player
+                    </button>
+                    <div class="flex items-center gap-2">
+                        <label for="player-speed-input" class="text-gray-300">Speed:</label>
+                        <input type="number" id="player-speed-input" value="5" min="1" max="100" class="rounded-md">
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <label for="player-boundary-input" class="text-gray-300">Boundary:</label>
+                        <select id="player-boundary-input" class="rounded-md">
+                            <option value="stop">Stop at Edges</option>
+                            <option value="wrap">Wrap Around</option>
+                            <option value="follow">Follow Player</option>
+                        </select>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <label for="player-color-select" class="text-gray-300">Player Color:</label>
+                        <select id="player-color-select" class="rounded-md">
+                            <option value="#63b3ed" selected style="background-color:#63b3ed; color:white;">Blue (Default)</option>
+                            <option value="#ef4444" style="background-color:#ef4444; color:white;">Red</option>
+                            <option value="#f97316" style="background-color:#f97316; color:white;">Orange</option>
+                            <option value="#facc15" style="background-color:#facc15; color:black;">Yellow</option>
+                            <option value="#22c55e" style="background-color:#22c55e; color:white;">Green</option>
+                            <option value="#3b82f6" style="background-color:#3b82f6; color:white;">Blue (Darker)</option>
+                            <option value="#6366f1" style="background-color:#6366f1; color:white;">Indigo</option>
+                            <option value="#a855f7" style="background-color:#a855f7; color:white;">Violet</option>
+                            <option value="#a0aec0" style="background-color:#a0aec0; color:black;">Gray</option>
+                        </select>
+                    </div>
+                    <button id="select-wall-btn" class="btn btn-secondary flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M4 3a2 2 0 100 4h12a2 2 0 100-4H4z"></path><path fill-rule="evenodd" d="M3 8h14v5a2 2 0 01-2 2H5a2 2 0 01-2-2V8zm5 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" clip-rule="evenodd"></path></svg>
+                        Add Wall
+                    </button>
+                    <div class="flex items-center gap-2">
+                        <label for="wall-color-select" class="text-gray-300">Wall Color:</label>
+                        <select id="wall-color-select" class="rounded-md">
+                            <option value="#ef4444" style="background-color:#ef4444; color:white;">Red</option>
+                            <option value="#f97316" style="background-color:#f97316; color:white;">Orange</option>
+                            <option value="#facc15" style="background-color:#facc15; color:black;">Yellow</option>
+                            <option value="#22c55e" style="background-color:#22c55e; color:white;">Green</option>
+                            <option value="#3b82f6" style="background-color:#3b82f6; color:white;">Blue</option>
+                            <option value="#6366f1" style="background-color:#6366f1; color:white;">Indigo</option>
+                            <option value="#a855f7" style="background-color:#a855f7; color:white;">Violet</option>
+                            <option value="#a0aec0" selected style="background-color:#a0aec0; color:black;">Gray (Default)</option>
+                        </select>
+                    </div>
+                    <button id="select-enemy-btn" class="btn btn-secondary flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-7-2a1 1 0 110-2 1 1 0 010 2zM7 8a1 1 0 100-2 1 1 0 000 2zm6-1a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"></path></svg>
+                        Add Enemy
+                    </button>
+                     <div class="flex items-center gap-2">
+                        <label for="enemy-color-select" class="text-gray-300">Enemy Color:</label>
+                        <select id="enemy-color-select" class="rounded-md">
+                            <option value="#dc2626" selected style="background-color:#dc2626; color:white;">Red (Default)</option>
+                            <option value="#f97316" style="background-color:#f97316; color:white;">Orange</option>
+                            <option value="#facc15" style="background-color:#facc15; color:black;">Yellow</option>
+                            <option value="#22c55e" style="background-color:#22c55e; color:white;">Green</option>
+                            <option value="#3b82f6" style="background-color:#3b82f6; color:white;">Blue</option>
+                            <option value="#6366f1" style="background-color:#6366f1; color:white;">Indigo</option>
+                            <option value="#a855f7" style="background-color:#a855f7; color:white;">Violet</option>
+                        </select>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <label for="enemy-speed-input" class="text-gray-300">Enemy Speed:</label>
+                        <input type="number" id="enemy-speed-input" value="1" min="0.1" max="10" step="0.1" class="rounded-md">
+                    </div>
+                    <button id="select-door-btn" class="btn btn-secondary flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1.447l.955.573 6.963 4.178A1 1 0 0118 11v6a1 1 0 01-1 1H3a1 1 0 01-1-1v-6a1 1 0 01.082-.447l6.963-4.178.955-.573V3a1 1 0 011-1zM5 13a1 1 0 100 2h10a1 1 0 100-2H5z" clip-rule="evenodd"></path></svg>
+                        Add Door
+                    </button>
+                    <div class="flex items-center gap-2">
+                        <label for="door-color-select" class="text-gray-300">Door Color:</label>
+                        <select id="door-color-select" class="rounded-md">
+                            <option value="#3b82f6" selected style="background-color:#3b82f6; color:white;">Blue (Default)</option>
+                            <option value="#ef4444" style="background-color:#ef4444; color:white;">Red</option>
+                            <option value="#f97316" style="background-color:#f97316; color:white;">Orange</option>
+                            <option value="#facc15" style="background-color:#facc15; color:black;">Yellow</option>
+                            <option value="#22c55e" style="background-color:#22c55e; color:white;">Green</option>
+                            <option value="#6366f1" style="background-color:#6366f1; color:white;">Indigo</option>
+                            <option value="#a855f7" style="background-color:#a855f7; color:white;">Violet</option>
+                            <option value="#a0aec0" style="background-color:#a0aec0; color:black;">Gray</option>
+                        </select>
+                    </div>
+                    <button id="eraser-btn" class="btn btn-secondary flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M17.778 7.778l-1.06-1.06a.75.75 0 00-1.06 0L13.22 8.72a.75.75 0 000 1.06l1.06 1.06a.75.75 0 001.06 0l2.438-2.438a.75.75 0 000-1.06zM9 14.5a.5.5 0 01.5-.5h4a.5.5 0 010 1h-4a.5.5 0 01-.5-.5zm-2.75 2.5a.75.75 0 00.75.75h9.5a.75.75 0 00.75-.75V7.5a.75.75 0 00-.75-.75h-9.5a.75.75 0 00-.75.75v9zM6.5 6h.75a.75.75 0 000-1.5h-.75a.75.75 0 00-.75.75v.75zm13-1.5a.75.75 0 00-.75-.75h-.75a.75.75 0 000 1.5h.75a.75.75 0 00.75-.75z" clip-rule="evenodd"></path></svg>
+                        Eraser
+                    </button>
+                    <button id="pan-view-btn" class="btn btn-secondary flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M10 2a8 8 0 100 16 8 8 0 000-16zM5 8a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1zm0 4a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1z"/></svg>
+                        Pan View
+                    </button>
+                    <button id="reset-view-btn" class="btn btn-secondary flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M4 2a2 2 0 00-2 2v4a2 2 0 002 2h4a2 2 0 002-2V4a2 2 0 00-2-2H4zm10 0a2 2 0 00-2 2v4a2 2 0 002 2h4a2 2 0 002-2V4a2 2 0 00-2-2h-4zM4 12a2 2 0 00-2 2v4a2 2 0 002 2h4a2 2 0 002-2v-4a2 2 0 00-2-2H4zm10 0a2 2 0 00-2 2v4a2 2 0 002 2h4a2 2 0 002-2v-4a2 2 0 00-2-2h-4z"/></svg>
+                        Reset View
+                    </button>
+                    <button id="toggle-gravity-btn" class="btn btn-secondary flex items-center gap-2">
+                         <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v3.586L7.707 9.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 10.586V7z" clip-rule="evenodd"></path></svg>
+                        Add Gravity
+                    </button>
+                    <div class="flex items-center gap-2">
+                        <label for="jump-height-input" class="text-gray-300">Jump Ht:</label>
+                        <input type="number" id="jump-height-input" value="50" min="1" max="100" class="rounded-md">
+                    </div>
+                    <button id="clear-canvas-btn" class="btn btn-secondary flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm6 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clip-rule="evenodd"></path></svg>
+                        Clear All
+                    </button>
+                </div>
+
+                <!-- Play Test Controls (hidden in edit mode) -->
+                <div id="play-test-controls" class="hidden flex flex-wrap gap-3 mb-6 justify-center">
+                    <button id="play-test-btn" class="btn btn-primary flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"></path></svg>
+                        Play Test
+                    </button>
+                    <button id="stop-play-test-btn" class="btn btn-danger flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H8z" clip-rule="evenodd"></path></svg>
+                        Stop Play Test
+                    </button>
+                     <p id="ground-status" class="text-sm text-gray-400">On Ground: N/A</p>
+                </div>
+            </div>
+
+            <!-- Right Panel: Code Editor and Output -->
+            <div class="flex-1 flex flex-col">
+                <h2 class="text-3xl font-bold mb-4 text-purple-300">Game Logic (Python)</h2>
+                <div class="mb-4">
+                    <label for="game-name-input" class="block text-lg font-medium text-gray-300 mb-2">Game Name:</label>
+                    <input type="text" id="game-name-input" value="My Pygame Game" class="w-full text-sm rounded-lg p-3" placeholder="Enter your game name">
+                </div>
+                <div class="mb-4">
+                    <label for="python-input" class="block text-lg font-medium text-gray-300 mb-2">Your Pygame Logic (for exported code only):</label>
+                    <textarea id="python-input" rows="12" class="w-full text-sm rounded-lg p-3" placeholder="# Add your Pygame logic here.&#10;# Example:&#10;# if keys[pygame.K_LEFT]:&#10;#     player_x -= player_speed&#10;# if player_rect.colliderect(wall_rect):&#10;#     game_over = True&#10;"></textarea>
+                    <p class="text-sm text-gray-400 mt-1">
+                        Note: This logic is for the *generated Python code* only, and does not affect the in-browser playtest.
+                        Ensure proper Python indentation (e.g., 4 spaces for blocks).
+                    </p>
+                </div>
+
+                <button id="generate-code-btn" class="btn btn-primary w-full py-3 mb-6">
+                    Generate Pygame Code
+                </button>
+
+                <div class="mb-4">
+                    <label for="python-output" class="block text-lg font-medium text-gray-300 mb-2">Generated Pygame Code (Copy and Run Locally):</label>
+                    <textarea id="python-output" rows="15" class="w-full text-sm rounded-lg p-3" readonly></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Modal for Messages -->
+    <div id="custom-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3 id="modal-title"></h3>
+            <p id="modal-message"></p>
+            <button id="modal-close-btn" class="modal-close-btn">OK</button>
+        </div>
+    </div>
+
+    <script>
+        // Global variables for canvas and game state
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        // Elements now include playerSpeed and boundaryBehavior
+        let elements = []; // Stores { x, y, type, width, height, color, playerSpeed (if player), boundaryBehavior (if player), enemySpeed (if enemy) }
+        let selectedTool = null; // 'player', 'wall', 'eraser', 'pan', 'enemy', 'door'
+        let isPlaytesting = false; // New state for playtesting mode
+        let animationFrameId = null; // To store requestAnimationFrame ID for stopping
+
+        // Player state for playtesting
+        let playerPlaytest = {
+            x: 0, y: 0, width: 0, height: 0, color: '',
+            speed: 0, // Scaled speed for horizontal movement in playtest
+            boundary: 'stop',
+            velocityY: 0, // Current vertical velocity
+            isJumping: false,
+            isOnGround: false,
+            jumpStrength: 0, // User's jump height input (1-100)
+            originalSpeedSetting: 0 // Store original speed setting for generated code
+        };
+        let pressedKeys = {}; // To track currently pressed keys for smooth movement
+
+        // Panning variables for edit mode
+        let editPanX = 0; // Current temporary pan offset X
+        let editPanY = 0; // Current temporary pan offset Y
+        let isMouseDown = false; // Is mouse button currently down?
+        let lastMouseX = 0; // Last mouse X for drag calculation
+        let lastMouseY = 0; // Last mouse Y for drag calculation
+        let initialClickX = 0; // Mouse X when click started
+        let initialClickY = 0; // Mouse Y when click started
+        const DRAG_THRESHOLD = 5; // Pixels to move before considering it a drag instead of a click
+
+        // Gravity constant for in-browser playtest (pixels per frame per frame)
+        const GRAVITY_ACCELERATION_PLAYTEST = 0.3; // Adjusted for smoother visual fall
+
+        // UI Element References
+        const homeScreen = document.getElementById('home-screen');
+        const sandboxScreen = document.getElementById('sandbox-screen');
+        const startGameMakerBtn = document.getElementById('start-game-maker-btn');
+        const selectPlayerBtn = document.getElementById('select-player-btn');
+        const playerSpeedInput = document.getElementById('player-speed-input');
+        const playerBoundaryInput = document.getElementById('player-boundary-input');
+        const playerColorSelect = document.getElementById('player-color-select');
+        const selectWallBtn = document.getElementById('select-wall-btn');
+        const wallColorSelect = document.getElementById('wall-color-select');
+        const selectEnemyBtn = document.getElementById('select-enemy-btn');
+        const enemyColorSelect = document.getElementById('enemy-color-select');
+        const enemySpeedInput = document.getElementById('enemy-speed-input'); // New: Enemy speed input
+        const selectDoorBtn = document.getElementById('select-door-btn');
+        const doorColorSelect = document.getElementById('door-color-select');
+        const eraserBtn = document.getElementById('eraser-btn');
+        const panViewBtn = document.getElementById('pan-view-btn');
+        const resetViewBtn = document.getElementById('reset-view-btn');
+        const toggleGravityBtn = document.getElementById('toggle-gravity-btn');
+        const jumpHeightInput = document.getElementById('jump-height-input');
+        const clearCanvasBtn = document.getElementById('clear-canvas-btn');
+        const gameNameInput = document.getElementById('game-name-input');
+        const pythonInput = document.getElementById('python-input');
+        const pythonOutput = document.getElementById('python-output');
+        const generateCodeBtn = document.getElementById('generate-code-btn');
+        const editControls = document.getElementById('edit-controls');
+        const playTestControls = document.getElementById('play-test-controls');
+        const playTestBtn = document.getElementById('play-test-btn');
+        const stopPlayTestBtn = document.getElementById('stop-play-test-btn');
+        const groundStatus = document.getElementById('ground-status');
+
+        // State variables for tool options
+        let isGravityEnabled = false;
+        let selectedWallColor = wallColorSelect.value;
+        let selectedPlayerColor = playerColorSelect.value;
+        let selectedEnemyColor = enemyColorSelect.value;
+        let selectedEnemySpeed = parseFloat(enemySpeedInput.value); // New: Enemy speed state
+        let selectedDoorColor = doorColorSelect.value;
+
+        // Constants for element sizes
+        const PLAYER_SIZE = 30;
+        const WALL_SIZE = 40;
+        const ENEMY_SIZE = 30;
+        const DOOR_SIZE = 40;
+
+        // Modal Elements
+        const customModal = document.getElementById('custom-modal');
+        const modalTitle = document.getElementById('modal-title');
+        const modalMessage = document.getElementById('modal-message');
+        const modalCloseBtn = document.getElementById('modal-close-btn');
+
+        // Mapping for Pygame colors (hex to RGB tuple string)
+        const pygameColorMap = {
+            '#63b3ed': '(99, 179, 237)',   // Blue (Player Default)
+            '#ef4444': '(239, 68, 68)',    // Red
+            '#f97316': '(249, 115, 22)',   // Orange
+            '#facc15': '(250, 204, 21)',   // Yellow
+            '#22c55e': '(34, 197, 94)',    // Green
+            '#3b82f6': '(59, 130, 246)',   // Blue (Darker/General)
+            '#6366f1': '(99, 102, 241)',   // Indigo
+            '#a855f7': '(168, 85, 247)',   // Violet
+            '#a0aec0': '(160, 174, 192)',  // Gray (Wall Default)
+            '#dc2626': '(220, 38, 38)'     // Stronger Red for Enemy Default
+        };
+
+        /**
+         * Shows a custom modal message.
+         * @param {string} title - The title of the modal.
+         * @param {string} message - The message content.
+         */
+        function showModal(title, message) {
+            modalTitle.textContent = title;
+            modalMessage.textContent = message;
+            customModal.classList.remove('hidden');
+        }
+
+        /**
+         * Hides the custom modal.
+         */
+        function hideModal() {
+            customModal.classList.add('hidden');
+        }
+
+        /**
+         * Clears the canvas and elements array, then redraws.
+         * Optionally draws the playtest player if in playtest mode.
+         */
+        function drawCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear entire canvas
+
+            let cameraOffsetX = 0;
+            let cameraOffsetY = 0;
+
+            // In "Follow Player" mode (playtest), calculate camera offset to center the player
+            if (isPlaytesting && playerPlaytest.boundary === 'follow' && playerPlaytest.width > 0) {
+                // The player's world coordinates determine the camera's offset
+                cameraOffsetX = playerPlaytest.x - (canvas.width / 2 - playerPlaytest.width / 2);
+                cameraOffsetY = playerPlaytest.y - (canvas.height / 2 - playerPlaytest.height / 2);
+            } else if (!isPlaytesting) {
+                // In edit mode, apply current pan offset
+                cameraOffsetX = -editPanX; // Apply pan in reverse for drawing elements
+                cameraOffsetY = -editPanY; // Apply pan in reverse for drawing elements
+            }
+
+            // Draw each element (walls, enemies, doors, and original player position)
+            elements.forEach(element => {
+                ctx.fillStyle = element.color;
+                
+                let drawX = element.x - cameraOffsetX; // Apply camera/pan offset
+                let drawY = element.y - cameraOffsetY; // Apply camera/pan offset
+
+                ctx.fillRect(drawX, drawY, element.width, element.height);
+                ctx.strokeStyle = '#e2e8f0'; // Light border for visibility
+                ctx.lineWidth = 1;
+                ctx.strokeRect(drawX, drawY, element.width, element.height);
+
+                // Add text label for clarity (only in edit mode)
+                if (!isPlaytesting) {
+                    ctx.fillStyle = '#1a202c'; // Dark text
+                    ctx.font = '12px Inter';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    let labelText = element.type.toUpperCase();
+                    if (element.type === 'player') {
+                        // Display the original speed setting (1-100)
+                        labelText += ` S:${element.playerSpeed || 5} B:${element.boundaryBehavior ? element.boundaryBehavior.substring(0,1).toUpperCase() : 'S'}`;
+                        if (element.hasGravity) {
+                             labelText += ` G:ON J:${element.jumpHeight || 50}`;
+                        }
+                    } else if (element.type === 'enemy') { // New: Show enemy speed
+                        labelText += ` S:${element.enemySpeed || 1}`;
+                    }
+                    ctx.fillText(labelText, drawX + element.width / 2, drawY + element.height / 2);
+                }
+            });
+
+            // Draw the playtest player specifically for playtesting mode
+            if (isPlaytesting && playerPlaytest.width > 0) {
+                ctx.fillStyle = playerPlaytest.color;
+                let playerDrawX = playerPlaytest.x;
+                let playerDrawY = playerPlaytest.y;
+
+                // In "Follow Player" mode, the player is drawn centered on the screen
+                if (playerPlaytest.boundary === 'follow') {
+                    playerDrawX = (canvas.width / 2 - playerPlaytest.width / 2);
+                    playerDrawY = (canvas.height / 2 - playerPlaytest.height / 2);
+                }
+                // In "Stop at Edges" or "Wrap Around", playerDrawX/Y are already world coordinates relative to (0,0)
+                // and already clipped or wrapped by gameLoop logic, so no additional offset here.
+
+                ctx.fillRect(playerDrawX, playerDrawY, playerPlaytest.width, playerPlaytest.height);
+                ctx.strokeStyle = '#e2e8f0';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(playerDrawX, playerDrawY, playerPlaytest.width, playerPlaytest.height);
+            }
+        }
+
+        /**
+         * Adds an element to the canvas at the given coordinates.
+         * @param {number} x - X coordinate (relative to canvas top-left).
+         * @param {number} y - Y coordinate (relative to canvas top-left).
+         */
+        function addElement(x, y) {
+            if (isPlaytesting || (selectedTool !== 'player' && selectedTool !== 'wall' && selectedTool !== 'enemy' && selectedTool !== 'door')) return;
+
+            let newElement = {};
+            let elementSize = 0;
+            if (selectedTool === 'player') elementSize = PLAYER_SIZE;
+            else if (selectedTool === 'wall') elementSize = WALL_SIZE;
+            else if (selectedTool === 'enemy') elementSize = ENEMY_SIZE;
+            else if (selectedTool === 'door') elementSize = DOOR_SIZE;
+
+            const worldX = x - elementSize / 2 - editPanX;
+            const worldY = y - elementSize / 2 - editPanY;
+
+            if (selectedTool === 'player') {
+                const speed = parseInt(playerSpeedInput.value, 10);
+                const boundary = playerBoundaryInput.value;
+                const jumpHeight = parseInt(jumpHeightInput.value, 10);
+                const playerColor = playerColorSelect.value;
+
+                if (isNaN(speed) || speed < 1 || speed > 100) {
+                    showModal("Invalid Speed", "Please enter a player speed between 1 and 100.");
+                    return;
+                }
+                if (isGravityEnabled && (isNaN(jumpHeight) || jumpHeight < 1 || jumpHeight > 100)) {
+                    showModal("Invalid Jump Height", "Please enter a jump height between 1 and 100 pixels.");
+                    return;
+                }
+
+                newElement = {
+                    x: worldX,
+                    y: worldY,
+                    type: 'player',
+                    width: PLAYER_SIZE,
+                    height: PLAYER_SIZE,
+                    color: playerColor,
+                    playerSpeed: speed,
+                    boundaryBehavior: boundary,
+                    hasGravity: isGravityEnabled,
+                    jumpHeight: jumpHeight
+                };
+                elements = elements.filter(el => el.type !== 'player');
+                elements.push(newElement);
+            } else if (selectedTool === 'wall') {
+                newElement = {
+                    x: worldX,
+                    y: worldY,
+                    type: 'wall',
+                    width: WALL_SIZE,
+                    height: WALL_SIZE,
+                    color: selectedWallColor
+                };
+                elements.push(newElement);
+            } else if (selectedTool === 'enemy') {
+                const enemySpeed = parseFloat(enemySpeedInput.value); // Get enemy speed
+                 if (isNaN(enemySpeed) || enemySpeed < 0.1 || enemySpeed > 10) { // Validate enemy speed
+                    showModal("Invalid Enemy Speed", "Please enter an enemy speed between 0.1 and 10.");
+                    return;
+                }
+                newElement = {
+                    x: worldX,
+                    y: worldY,
+                    type: 'enemy',
+                    width: ENEMY_SIZE,
+                    height: ENEMY_SIZE,
+                    color: selectedEnemyColor,
+                    enemySpeed: enemySpeed // Store enemy speed
+                };
+                elements.push(newElement);
+            } else if (selectedTool === 'door') {
+                newElement = {
+                    x: worldX,
+                    y: worldY,
+                    type: 'door',
+                    width: DOOR_SIZE,
+                    height: DOOR_SIZE,
+                    color: selectedDoorColor
+                };
+                elements.push(newElement);
+            }
+            drawCanvas();
+        }
+
+        /**
+         * Removes an element from the canvas at the given coordinates.
+         * @param {number} clickX - X coordinate of the click (relative to canvas top-left).
+         * @param {number} clickY - Y coordinate of the click (relative to canvas top-left).
+         */
+        function removeElement(clickX, clickY) {
+            if (isPlaytesting || selectedTool !== 'eraser') return;
+
+            const worldClickX = clickX - editPanX;
+            const worldClickY = clickY - editPanY;
+
+            for (let i = elements.length - 1; i >= 0; i--) {
+                const element = elements[i];
+                if (worldClickX >= element.x && worldClickX <= element.x + element.width &&
+                    worldClickY >= element.y && worldClickY <= element.y + element.height) {
+                    elements.splice(i, 1);
+                    drawCanvas();
+                    return;
+                }
+            }
+        }
+
+        /**
+         * Sets the active tool and updates button styles.
+         * @param {string|null} tool - The tool to select.
+         */
+        function setSelectedTool(tool) {
+            selectedTool = tool;
+            // Reset all button styles
+            selectPlayerBtn.classList.remove('btn-active');
+            selectWallBtn.classList.remove('btn-active');
+            selectEnemyBtn.classList.remove('btn-active');
+            selectDoorBtn.classList.remove('btn-active');
+            eraserBtn.classList.remove('btn-active');
+            panViewBtn.classList.remove('btn-active');
+            resetViewBtn.classList.remove('btn-active');
+
+            // Apply active style to the selected button and update cursor
+            if (tool === 'player' || tool === 'wall' || tool === 'enemy' || tool === 'door') {
+                if (tool === 'player') selectPlayerBtn.classList.add('btn-active');
+                if (tool === 'wall') selectWallBtn.classList.add('btn-active');
+                if (tool === 'enemy') selectEnemyBtn.classList.add('btn-active');
+                if (tool === 'door') selectDoorBtn.classList.add('btn-active');
+                canvas.style.cursor = 'crosshair';
+            } else if (tool === 'eraser') {
+                eraserBtn.classList.add('btn-active');
+                canvas.style.cursor = 'url("data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'24\' height=\'24\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\' class=\'lucide lucide-eraser\'><path d=\'M2.7 15.7l10.6 10.6c.4.4 1 .4 1.4 0l8.6-8.6c.4-.4.4-1 0-1.4L11.1 4.3c-.4-.4-1-.4-1.4 0L2.7 15.7z\'/><path d=\'M7 2L2 7\'/><path d=\'M9 4L4 9\'/></svg>") 12 12, auto';
+            } else if (tool === 'pan') {
+                panViewBtn.classList.add('btn-active');
+                canvas.style.cursor = 'grab';
+            } else {
+                canvas.style.cursor = 'default';
+            }
+        }
+
+        /**
+         * Toggles gravity on/off and updates the button style.
+         */
+        function toggleGravity() {
+            isGravityEnabled = !isGravityEnabled;
+            if (isGravityEnabled) {
+                toggleGravityBtn.classList.add('btn-active');
+                jumpHeightInput.disabled = false;
+            } else {
+                toggleGravityBtn.classList.remove('btn-active');
+                jumpHeightInput.disabled = true;
+            }
+            const player = elements.find(el => el.type === 'player');
+            if (player) {
+                player.hasGravity = isGravityEnabled;
+                player.jumpHeight = parseInt(jumpHeightInput.value, 10);
+            }
+            drawCanvas();
+        }
+
+        /**
+         * Starts the in-browser playtest mode.
+         */
+        function startPlaytest() {
+            const existingPlayer = elements.find(el => el.type === 'player');
+            if (!existingPlayer) {
+                showModal("Player Missing!", "Please add a player to the canvas using the 'Add Player' button before starting the playtest.");
+                return;
+            }
+
+            isPlaytesting = true;
+            editControls.classList.add('hidden');
+            playTestControls.classList.remove('hidden');
+            canvas.style.cursor = 'default';
+
+            playerPlaytest.x = existingPlayer.x;
+            playerPlaytest.y = existingPlayer.y;
+            playerPlaytest.width = existingPlayer.width;
+            playerPlaytest.height = existingPlayer.height;
+            playerPlaytest.color = existingPlayer.color;
+            playerPlaytest.originalSpeedSetting = existingPlayer.playerSpeed || 5;
+
+            const minPlaytestSpeedH = 0.1;
+            const maxPlaytestSpeedH = 10.0;
+            playerPlaytest.speed = minPlaytestSpeedH + (playerPlaytest.originalSpeedSetting - 1) * (maxPlaytestSpeedH - minPlaytestSpeedH) / (100 - 1);
+            playerPlaytest.speed = Math.max(minPlaytestSpeedH, playerPlaytest.speed);
+            
+            playerPlaytest.boundary = existingPlayer.boundaryBehavior || 'stop';
+            playerPlaytest.hasGravity = existingPlayer.hasGravity;
+            playerPlaytest.jumpStrength = existingPlayer.jumpHeight || 50;
+
+            playerPlaytest.velocityY = 0;
+            playerPlaytest.isJumping = false;
+            playerPlaytest.isOnGround = false;
+
+            // Reset enemy positions and state for playtest
+            elements.filter(el => el.type === 'enemy').forEach(enemy => {
+                enemy.currentX = enemy.x; // Store their initial position
+                enemy.currentY = enemy.y;
+            });
+
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+            }
+            gameLoop();
+        }
+
+        /**
+         * Stops the in-browser playtest mode.
+         * @param {boolean} [showGameOver=false] - Whether to show a game over message.
+         */
+        function stopPlaytest(showGameOver = false) {
+            isPlaytesting = false;
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+                animationFrameId = null;
+            }
+            editControls.classList.remove('hidden');
+            playTestControls.classList.add('hidden');
+            groundStatus.textContent = "On Ground: N/A";
+            setSelectedTool(selectedTool);
+
+            playerPlaytest = {
+                x: 0, y: 0, width: 0, height: 0, color: '',
+                speed: 0, boundary: 'stop', velocityY: 0, isJumping: false, isOnGround: false, jumpStrength: 0, originalSpeedSetting: 0
+            };
+            const existingPlayer = elements.find(el => el.type === 'player');
+            if (existingPlayer) {
+                playerPlaytest.x = existingPlayer.x;
+                playerPlaytest.y = existingPlayer.y;
+            }
+
+            // Restore enemy positions after playtest
+            elements.filter(el => el.type === 'enemy').forEach(enemy => {
+                enemy.x = enemy.currentX; // Restore to initial position
+                enemy.y = enemy.currentY;
+                delete enemy.currentX; // Clean up temporary playtest properties
+                delete enemy.currentY;
+            });
+
+            pressedKeys = {};
+            editPanX = 0;
+            editPanY = 0;
+            drawCanvas();
+
+            if (showGameOver) {
+                showModal("Game Over!", "You collided with an enemy!");
+            }
+        }
+
+        /**
+         * Checks for collision between two rectangles.
+         * @param {object} rect1 - {x, y, width, height}
+         * @param {object} rect2 - {x, y, width, height}
+         * @returns {boolean} True if colliding, false otherwise.
+         */
+        function checkCollision(rect1, rect2) {
+            return rect1.x < rect2.x + rect2.width &&
+                   rect1.x + rect1.width > rect2.x &&
+                   rect1.y < rect2.y + rect2.height &&
+                   rect1.y + rect1.height > rect2.y;
+        }
+
+        /**
+         * The main game loop for in-browser playtesting.
+         */
+        function gameLoop() {
+            if (!isPlaytesting) return;
+
+            const oldPlayerX = playerPlaytest.x;
+            const oldPlayerY = playerPlaytest.y;
+            
+            // Apply gravity if enabled
+            if (playerPlaytest.hasGravity) {
+                if (!playerPlaytest.isOnGround) {
+                    playerPlaytest.velocityY += GRAVITY_ACCELERATION_PLAYTEST;
+                }
+            } else {
+                playerPlaytest.velocityY = 0;
+                playerPlaytest.isJumping = false;
+                playerPlaytest.isOnGround = false;
+            }
+
+            // Horizontal movement
+            if (pressedKeys['ArrowLeft'] || pressedKeys['a'] || pressedKeys['A']) {
+                playerPlaytest.x -= playerPlaytest.speed;
+            }
+            if (pressedKeys['ArrowRight'] || pressedKeys['d'] || pressedKeys['D']) {
+                playerPlaytest.x += playerPlaytest.speed;
+            }
+
+            // Vertical movement due to velocity (gravity/jump)
+            playerPlaytest.y += playerPlaytest.velocityY;
+            
+            playerPlaytest.isOnGround = false; // Reset for current frame
+
+            const wallElements = elements.filter(el => el.type === 'wall');
+            const enemyElements = elements.filter(el => el.type === 'enemy');
+            const doorElements = elements.filter(el => el.type === 'door');
+            
+            // --- Vertical Collision Resolution (Player with Walls) ---
+            let playerPotentialRectY = {
+                x: playerPlaytest.x,
+                y: playerPlaytest.y,
+                width: playerPlaytest.width,
+                height: playerPlaytest.height
+            };
+
+            for (const wall of wallElements) {
+                if (checkCollision(playerPotentialRectY, wall)) {
+                    if (oldPlayerY + playerPlaytest.height <= wall.y && playerPotentialRectY.y + playerPlaytest.height > wall.y) {
+                        playerPlaytest.y = wall.y - playerPlaytest.height;
+                        playerPlaytest.velocityY = 0;
+                        playerPlaytest.isOnGround = true;
+                        playerPlaytest.isJumping = false;
+                    }
+                    else if (oldPlayerY >= wall.y + wall.height && playerPotentialRectY.y < wall.y + wall.height) {
+                        playerPlaytest.y = wall.y + wall.height;
+                        playerPlaytest.velocityY = 0;
+                    } else {
+                        playerPlaytest.y = oldPlayerY;
+                        playerPlaytest.velocityY = 0;
+                    }
+                    playerPotentialRectY.y = playerPlaytest.y;
+                }
+            }
+
+            // Check collision with canvas bottom (ground)
+            if (playerPlaytest.y + playerPlaytest.height >= canvas.height) {
+                playerPlaytest.y = canvas.height - playerPlaytest.height;
+                playerPlaytest.velocityY = 0;
+                playerPlaytest.isOnGround = true;
+                playerPlaytest.isJumping = false;
+            } else if (playerPlaytest.y < 0 && playerPlaytest.boundary === 'stop') {
+                playerPlaytest.y = 0;
+                playerPlaytest.velocityY = 0;
+            }
+
+            // --- Horizontal Collision Resolution (Player with Walls) ---
+            let playerPotentialRectX = {
+                x: playerPlaytest.x,
+                y: playerPlaytest.y,
+                width: playerPlaytest.width,
+                height: playerPlaytest.height
+            };
+
+            for (const wall of wallElements) {
+                if (checkCollision(playerPotentialRectX, wall)) {
+                    playerPlaytest.x = oldPlayerX; // Revert X position
+                    break;
+                }
+            }
+            
+            // --- Player-Enemy Collision Check ---
+            for (const enemy of enemyElements) {
+                if (checkCollision(playerPlaytest, enemy)) {
+                    stopPlaytest(true); // Stop playtest and show game over message
+                    return; // Exit game loop immediately
+                }
+            }
+
+            // --- Player-Door Interaction ---
+            // Players can pass through doors, so no collision resolution is needed here.
+
+            // --- Enemy Movement and Collision (Enemies with Player, Walls, Doors) ---
+            for (const enemy of enemyElements) {
+                const oldEnemyX = enemy.x;
+                const oldEnemyY = enemy.y;
+
+                // Simple "follow player" logic
+                const dx = playerPlaytest.x - enemy.x;
+                const dy = playerPlaytest.y - enemy.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+
+                if (distance > 1) { // Avoid division by zero if very close
+                    enemy.x += (dx / distance) * enemy.enemySpeed;
+                    enemy.y += (dy / distance) * enemy.enemySpeed;
+                }
+
+                // Create a temporary rect for the enemy for collision checks
+                let enemyRect = {
+                    x: enemy.x,
+                    y: enemy.y,
+                    width: enemy.width,
+                    height: enemy.height
+                };
+
+                // Enemy collision with Walls
+                let collidedWithWallOrDoor = false;
+                for (const wall of wallElements) {
+                    if (checkCollision(enemyRect, wall)) {
+                        enemy.x = oldEnemyX;
+                        enemy.y = oldEnemyY;
+                        collidedWithWallOrDoor = true;
+                        break;
+                    }
+                }
+                if (!collidedWithWallOrDoor) { // Only check doors if not already blocked by a wall
+                    // Enemy collision with Doors (enemies are blocked by doors)
+                    for (const door of doorElements) {
+                        if (checkCollision(enemyRect, door)) {
+                            enemy.x = oldEnemyX;
+                            enemy.y = oldEnemyY;
+                            collidedWithWallOrDoor = true; // Mark as collided
+                            break;
+                        }
+                    }
+                }
+                // Update enemy's internal position for drawing (will be applied in drawCanvas)
+            }
+
+
+            // Update ground status display
+            groundStatus.textContent = `On Ground: ${playerPlaytest.isOnGround ? 'Yes' : 'No'}`;
+
+
+            // Jumping: Only if gravity is enabled and player is on ground
+            if (playerPlaytest.hasGravity && (pressedKeys['ArrowUp'] || pressedKeys['w'] || pressedKeys['W']) && playerPlaytest.isOnGround) {
+                playerPlaytest.velocityY = -Math.sqrt(2 * GRAVITY_ACCELERATION_PLAYTEST * playerPlaytest.jumpStrength);
+                playerPlaytest.isOnGround = false;
+                playerPlaytest.isJumping = true;
+            }
+            if (pressedKeys['ArrowUp']) pressedKeys['ArrowUp'] = false;
+            if (pressedKeys['w']) pressedKeys['w'] = false;
+            if (pressedKeys['W']) pressedKeys['W'] = false;
+
+
+            // Apply boundary behavior (only for 'stop' and 'wrap' as 'follow' is handled by camera offset)
+            if (playerPlaytest.boundary === 'stop') {
+                playerPlaytest.x = Math.max(0, Math.min(playerPlaytest.x, canvas.width - playerPlaytest.width));
+                playerPlaytest.y = Math.max(0, Math.min(playerPlaytest.y, canvas.height - playerPlaytest.height));
+            } else if (playerPlaytest.boundary === 'wrap') {
+                if (playerPlaytest.x > canvas.width) playerPlaytest.x = -playerPlaytest.width;
+                if (playerPlaytest.x + playerPlaytest.width < 0) playerPlaytest.x = canvas.width;
+                if (!playerPlaytest.hasGravity || playerPlaytest.isOnGround) {
+                    if (playerPlaytest.y > canvas.height) playerPlaytest.y = -playerPlaytest.height;
+                    if (playerPlaytest.y + playerPlaytest.height < 0) playerPlaytest.y = canvas.height;
+                }
+            }
+
+            drawCanvas(); // Redraw everything
+            animationFrameId = requestAnimationFrame(gameLoop); // Request next frame
+        }
+
+
+        /**
+         * Generates the Python Pygame code based on elements and user input.
+         */
+        function generatePythonCode() {
+            let playerElements = elements.filter(el => el.type === 'player');
+            let wallElements = elements.filter(el => el.type === 'wall');
+            let enemyElements = elements.filter(el => el.type === 'enemy');
+            let doorElements = elements.filter(el => el.type === 'door');
+            const gameName = gameNameInput.value || "My Pygame Game";
+
+            // Default values for Pygame export
+            let playerX = 100;
+            let playerY = 100;
+            let playerWidth = 30;
+            let playerHeight = 30;
+            let playerColorHex = '#63b3ed';
+            let playerSpeed = 5;
+            let playerBoundaryBehavior = 'stop';
+            let hasGravity = false;
+            let jumpHeight = 50;
+
+            if (playerElements.length > 0) {
+                const player = playerElements[0];
+                playerX = player.x;
+                playerY = player.y;
+                playerWidth = player.width;
+                playerHeight = player.height;
+                playerColorHex = player.color;
+                playerSpeed = player.playerSpeed;
+                playerBoundaryBehavior = player.boundaryBehavior;
+                hasGravity = player.hasGravity;
+                jumpHeight = player.jumpHeight;
+            }
+
+            let code = `import pygame
+import sys
+import math
+
+# Initialize Pygame
+pygame.init()
+
+# Screen dimensions
+SCREEN_WIDTH = ${canvas.width}
+SCREEN_HEIGHT = ${canvas.height}
+screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+pygame.display.set_caption("${gameName}")
+
+# Define colors for Pygame (RGB tuples)
+COLOR_RED = (239, 68, 68)
+COLOR_ORANGE = (249, 115, 22)
+COLOR_YELLOW = (250, 204, 21)
+COLOR_GREEN = (34, 197, 94)
+COLOR_BLUE = (59, 130, 246)
+COLOR_INDIGO = (99, 102, 241)
+COLOR_VIOLET = (168, 85, 247)
+COLOR_GRAY = (160, 174, 192)
+COLOR_BLACK = (0, 0, 0)
+COLOR_PLAYER_BLUE_DEFAULT = (99, 179, 237)
+COLOR_ENEMY_RED_DEFAULT = (220, 38, 38)
+COLOR_DOOR_BLUE_DEFAULT = (59, 130, 246)
+
+# Utility function to convert hex color to RGB tuple
+def hex_to_rgb(hex_color):
+    hex_color = hex_color.lstrip('#')
+    return tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
+
+# --- Player properties ---
+player_x = ${playerX}
+player_y = ${playerY}
+player_width = ${playerWidth}
+player_height = ${playerHeight}
+player_color = hex_to_rgb('${playerColorHex}')
+player_speed = ${playerSpeed}
+player_boundary_behavior = '${playerBoundaryBehavior}'
+player_rect = pygame.Rect(player_x, player_y, player_width, player_height)
+
+# Gravity and Jumping properties
+has_gravity = ${hasGravity ? 'True' : 'False'}
+gravity_acceleration = 0.5
+player_vel_y = 0
+is_on_ground = False
+jump_height_target = ${jumpHeight}
+initial_jump_velocity = -math.sqrt(2 * gravity_acceleration * jump_height_target) if has_gravity and jump_height_target > 0 else 0
+
+
+# Wall properties
+walls = [] # Each wall will be a dictionary: {'rect': pygame.Rect, 'color': (R,G,B)}
+`;
+            if (wallElements.length > 0) {
+                wallElements.forEach((wall, index) => {
+                    code += `wall_${index}_data = {'rect': pygame.Rect(${wall.x}, ${wall.y}, ${wall.width}, ${wall.height}), 'color': hex_to_rgb('${wall.color}')}
+walls.append(wall_${index}_data)
+`;
+                });
+            } else {
+                code += `
+# No walls defined. Add some in the game maker!
+# Example wall:
+# walls = [{'rect': pygame.Rect(200, 150, 40, 80), 'color': COLOR_GRAY}]
+`;
+            }
+
+            code += `
+# Enemy properties
+enemies = [] # Each enemy will be a dictionary: {'rect': pygame.Rect, 'color': (R,G,B), 'speed': float}
+`;
+            if (enemyElements.length > 0) {
+                enemyElements.forEach((enemy, index) => {
+                    code += `enemy_${index}_data = {
+    'rect': pygame.Rect(${enemy.x}, ${enemy.y}, ${enemy.width}, ${enemy.height}),
+    'color': hex_to_rgb('${enemy.color}'),
+    'speed': ${enemy.enemySpeed} # Enemy movement speed
+}
+enemies.append(enemy_${index}_data)
+`;
+                });
+            } else {
+                code += `
+# No enemies defined. Add some in the game maker!
+# Example enemy:
+# enemies = [{'rect': pygame.Rect(300, 200, 30, 30), 'color': COLOR_ENEMY_RED_DEFAULT, 'speed': 1.0}]
+`;
+            }
+
+            code += `
+# Door properties
+doors = [] # Players can pass through doors, but enemies cannot.
+`;
+            if (doorElements.length > 0) {
+                doorElements.forEach((door, index) => {
+                    code += `door_${index}_data = {'rect': pygame.Rect(${door.x}, ${door.y}, ${door.width}, ${door.height}), 'color': hex_to_rgb('${door.color}')}
+doors.append(door_${index}_data)
+`;
+                });
+            } else {
+                code += `
+# No doors defined. Add some in the game maker!
+# Example door:
+# doors = [{'rect': pygame.Rect(100, 100, 40, 60), 'color': COLOR_DOOR_BLUE_DEFAULT}]
+`;
+            }
+
+            code += `
+# Game loop
+running = True
+game_over = False
+clock = pygame.time.Clock()
+FPS = 60 # Frames per second
+
+try:
+    while running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            if event.type == pygame.KEYDOWN:
+                if not game_over and has_gravity and event.key == pygame.K_UP and is_on_ground:
+                    player_vel_y = initial_jump_velocity
+                    is_on_ground = False
+
+        if game_over:
+            screen.fill(COLOR_BLACK)
+            font = pygame.font.Font(None, 74)
+            text = font.render("GAME OVER!", True, COLOR_RED)
+            text_rect = text.get_rect(center=(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2))
+            screen.blit(text, text_rect)
+            pygame.display.flip()
+            continue
+
+        keys = pygame.key.get_pressed()
+
+        old_player_x = player_x
+        old_player_y = player_y
+
+        if has_gravity:
+            player_vel_y += gravity_acceleration
+        else:
+            player_vel_y = 0
+            is_on_ground = False
+
+        # --- Player Vertical Movement and Collision Resolution with Walls ---
+        player_y += player_vel_y
+        player_rect.topleft = (player_x, player_y)
+
+        is_on_ground = False
+
+        for wall_data in walls:
+            wall_rect = wall_data['rect']
+            if player_rect.colliderect(wall_rect):
+                if old_player_y + player_height <= wall_rect.top:
+                    player_y = wall_rect.top - player_height
+                    player_vel_y = 0
+                    is_on_ground = True
+                elif old_player_y >= wall_rect.bottom:
+                    player_y = wall_rect.bottom
+                    player_vel_y = 0
+                else:
+                    player_y = old_player_y
+                    player_vel_y = 0
+                player_rect.topleft = (player_x, player_y)
+
+        if player_y + player_height >= SCREEN_HEIGHT:
+            player_y = SCREEN_HEIGHT - player_height
+            player_vel_y = 0
+            is_on_ground = True
+        elif player_y < 0 and player_boundary_behavior == 'stop':
+            player_y = 0
+            player_vel_y = 0
+
+        player_rect.topleft = (player_x, player_y)
+
+        # --- Player Horizontal Movement and Collision Resolution with Walls ---
+        if keys[pygame.K_LEFT]:
+            player_x -= player_speed
+        if keys[pygame.K_RIGHT]:
+            player_x += player_speed
+        
+        player_rect.topleft = (player_x, player_y)
+
+        for wall_data in walls:
+            wall_rect = wall_data['rect']
+            if player_rect.colliderect(wall_rect):
+                if player_x < old_player_x:
+                    player_x = wall_rect.right
+                elif player_x > old_player_x:
+                    player_x = wall_rect.left - player_width
+                
+                player_rect.topleft = (player_x, player_y)
+                break
+
+        # --- Player-Enemy Collision Check ---
+        for enemy_data in enemies:
+            enemy_rect = enemy_data['rect']
+            if player_rect.colliderect(enemy_rect):
+                game_over = True
+                print("Game Over! Player collided with an enemy.")
+                break
+
+        # --- Player-Door Interaction ---
+        # Players can pass through doors, so no collision resolution is needed here.
+
+        # --- Enemy Movement and Collision (Enemies with Player, Walls, Doors) ---
+        for enemy_data in enemies:
+            enemy_rect = enemy_data['rect']
+            enemy_speed = enemy_data['speed']
+
+            old_enemy_x = enemy_rect.x
+            old_enemy_y = enemy_rect.y
+
+            # Calculate direction towards the player
+            dx = player_x - enemy_rect.x
+            dy = player_y - enemy_rect.y
+            distance = math.sqrt(dx*dx + dy*dy)
+
+            if distance > enemy_speed: # Move only if not already very close
+                # Normalize direction vector and move enemy
+                enemy_rect.x += (dx / distance) * enemy_speed
+                enemy_rect.y += (dy / distance) * enemy_speed
+            elif distance > 0: # If very close but not zero, snap to player position for smooth stopping
+                enemy_rect.x = player_x
+                enemy_rect.y = player_y
+
+            # After enemy movement, check for collisions with walls and doors
+            collided_with_obstacle = False
+            # Check walls
+            for wall_data in walls:
+                wall_rect = wall_data['rect']
+                if enemy_rect.colliderect(wall_rect):
+                    enemy_rect.topleft = (old_enemy_x, old_enemy_y) # Revert position
+                    collided_with_obstacle = True
+                    break
+            
+            # Check doors (enemies cannot pass through doors)
+            if not collided_with_obstacle: # Only check doors if not already blocked by a wall
+                for door_data in doors:
+                    door_rect = door_data['rect']
+                    if enemy_rect.colliderect(door_rect):
+                        enemy_rect.topleft = (old_enemy_x, old_enemy_y) # Revert position
+                        collided_with_obstacle = True
+                        break
+
+        # --- Apply Boundary Behavior ---
+        if player_boundary_behavior == 'wrap':
+            if player_x > SCREEN_WIDTH: player_x = -player_width
+            if player_x + player_width < 0: player_x = SCREEN_WIDTH
+            if not has_gravity or is_on_ground:
+                if player_y > SCREEN_HEIGHT: player_y = -player_height
+                if player_y + player_height < 0: player_y = SCREEN_HEIGHT
+        elif player_boundary_behavior == 'stop':
+            player_x = max(0, min(player_x, SCREEN_WIDTH - player_width))
+            player_y = max(0, min(player_y, SCREEN_HEIGHT - player_height))
+
+
+        player_rect.topleft = (player_x, player_y) # Final rect update
+
+
+        # --- Drawing ---
+        screen.fill(COLOR_BLACK)
+
+        camera_offset_x = 0
+        camera_offset_y = 0
+        if player_boundary_behavior == 'follow':
+            camera_offset_x = player_x - (SCREEN_WIDTH / 2 - player_width / 2)
+            camera_offset_y = player_y - (SCREEN_HEIGHT / 2 - player_height / 2)
+
+        for wall_data in walls:
+            wall_rect = wall_data['rect']
+            wall_color = wall_data['color']
+            pygame.draw.rect(screen, wall_color, (wall_rect.x - camera_offset_x, wall_rect.y - camera_offset_y, wall_rect.width, wall_rect.height))
+
+        for enemy_data in enemies:
+            enemy_rect = enemy_data['rect']
+            enemy_color = enemy_data['color']
+            pygame.draw.rect(screen, enemy_color, (enemy_rect.x - camera_offset_x, enemy_rect.y - camera_offset_y, enemy_rect.width, enemy_rect.height))
+
+        for door_data in doors:
+            door_rect = door_data['rect']
+            door_color = door_data['color']
+            pygame.draw.rect(screen, door_color, (door_rect.x - camera_offset_x, door_rect.y - camera_offset_y, door_rect.width, door_rect.height))
+
+        pygame.draw.rect(screen, player_color, (player_x - camera_offset_x, player_y - camera_offset_y, player_width, player_height))
+
+        pygame.display.flip()
+        clock.tick(FPS)
+
+except Exception as e:
+    print(f"An error occurred: {e}")
+    print("The game encountered an unexpected issue and had to close.")
+    print("Please check the error message above for details.")
+finally:
+    pygame.quit()
+    sys.exit()
+`;
+            pythonOutput.value = code;
+        }
+
+        // --- Event Listeners ---
+
+        // Switch to sandbox screen
+        startGameMakerBtn.addEventListener('click', () => {
+            homeScreen.classList.add('hidden');
+            sandboxScreen.classList.remove('hidden');
+            stopPlaytest();
+            setSelectedTool('pan');
+        });
+
+        // Tool selection buttons
+        selectPlayerBtn.addEventListener('click', () => setSelectedTool('player'));
+        selectWallBtn.addEventListener('click', () => setSelectedTool('wall'));
+        selectEnemyBtn.addEventListener('click', () => setSelectedTool('enemy'));
+        selectDoorBtn.addEventListener('click', () => setSelectedTool('door'));
+        eraserBtn.addEventListener('click', () => setSelectedTool('eraser'));
+        panViewBtn.addEventListener('click', () => setSelectedTool('pan'));
+        resetViewBtn.addEventListener('click', () => {
+            editPanX = 0;
+            editPanY = 0;
+            drawCanvas();
+            setSelectedTool('pan');
+        });
+        toggleGravityBtn.addEventListener('click', toggleGravity);
+
+        // Color/Option selectors
+        wallColorSelect.addEventListener('change', (event) => {
+            selectedWallColor = event.target.value;
+        });
+        playerColorSelect.addEventListener('change', (event) => {
+            selectedPlayerColor = event.target.value;
+            const player = elements.find(el => el.type === 'player');
+            if (player) {
+                player.color = selectedPlayerColor;
+                drawCanvas();
+            }
+        });
+        enemyColorSelect.addEventListener('change', (event) => {
+            selectedEnemyColor = event.target.value;
+        });
+        enemySpeedInput.addEventListener('change', (event) => { // New: Enemy speed input listener
+            selectedEnemySpeed = parseFloat(event.target.value);
+        });
+        doorColorSelect.addEventListener('change', (event) => {
+            selectedDoorColor = event.target.value;
+        });
+
+        // Clear canvas (clear all)
+        clearCanvasBtn.addEventListener('click', () => {
+            elements = [];
+            drawCanvas();
+            pythonOutput.value = '';
+            stopPlaytest();
+            editPanX = 0;
+            editPanY = 0;
+            isGravityEnabled = false;
+            toggleGravityBtn.classList.remove('btn-active');
+            jumpHeightInput.disabled = true;
+            // Reset color selectors and speed inputs to default
+            wallColorSelect.value = '#a0aec0';
+            selectedWallColor = '#a0aec0';
+            playerColorSelect.value = '#63b3ed';
+            selectedPlayerColor = '#63b3ed';
+            enemyColorSelect.value = '#dc2626';
+            selectedEnemyColor = '#dc2626';
+            enemySpeedInput.value = '1';
+            selectedEnemySpeed = 1;
+            doorColorSelect.value = '#3b82f6';
+            selectedDoorColor = '#3b82f6';
+            setSelectedTool('pan');
+        });
+
+        // Handle canvas clicks for adding or removing elements
+        canvas.addEventListener('mousedown', (event) => {
+            if (isPlaytesting) return;
+            isMouseDown = true;
+            initialClickX = event.clientX;
+            initialClickY = event.clientY;
+            lastMouseX = event.clientX;
+            lastMouseY = event.clientY;
+            
+            if (selectedTool === 'pan') {
+                canvas.style.cursor = 'grabbing';
+            }
+        });
+
+        canvas.addEventListener('mousemove', (event) => {
+            if (!isMouseDown || isPlaytesting || selectedTool !== 'pan') return;
+
+            const dx = event.clientX - lastMouseX;
+            const dy = event.clientY - lastMouseY;
+
+            editPanX += dx;
+            editPanY += dy;
+
+            lastMouseX = event.clientX;
+            lastMouseY = event.clientY;
+            
+            drawCanvas();
+        });
+
+        canvas.addEventListener('mouseup', (event) => {
+            if (!isMouseDown || isPlaytesting) return;
+            isMouseDown = false;
+
+            const deltaX = Math.abs(event.clientX - initialClickX);
+            const deltaY = Math.abs(event.clientY - initialClickY);
+
+            if (deltaX < DRAG_THRESHOLD && deltaY < DRAG_THRESHOLD && selectedTool !== 'pan') {
+                const rect = canvas.getBoundingClientRect();
+                const clickX = event.clientX - rect.left;
+                const clickY = event.clientY - rect.top;
+
+                if (selectedTool === 'eraser') {
+                    removeElement(clickX, clickY);
+                } else if (selectedTool === 'player' || selectedTool === 'wall' || selectedTool === 'enemy' || selectedTool === 'door') {
+                    addElement(clickX, clickY);
+                }
+            }
+            setSelectedTool(selectedTool);
+        });
+
+        canvas.addEventListener('mouseleave', () => {
+            if (isMouseDown && selectedTool === 'pan') {
+                isMouseDown = false;
+                canvas.style.cursor = 'grab';
+            }
+        });
+
+        // Generate code
+        generateCodeBtn.addEventListener('click', generatePythonCode);
+
+        // Playtest buttons
+        playTestBtn.addEventListener('click', startPlaytest);
+        stopPlayTestBtn.addEventListener('click', () => stopPlaytest(false));
+
+        // Close modal button
+        modalCloseBtn.addEventListener('click', hideModal);
+
+        // Keyboard input for playtesting
+        document.addEventListener('keydown', (event) => {
+            if (isPlaytesting) {
+                pressedKeys[event.key] = true;
+            }
+        });
+
+        document.addEventListener('keyup', (event) => {
+            if (isPlaytesting) {
+                pressedKeys[event.key] = false;
+            }
+        });
+
+
+        // Initial draw when the script loads
+        drawCanvas();
+        setSelectedTool('pan');
+        jumpHeightInput.disabled = true;
+    </script>
+</body>
+</html>
