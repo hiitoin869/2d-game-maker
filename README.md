@@ -4,7 +4,7 @@ website link --- https://hiitoin869.github.io/2d-game-maker/2d%20game%20maker.ht
 
 
 
-if it is not working go to this vid ----- 
+if it is not working go to this vid ----- https://www.youtube.com/watch?v=8kDOkOHZneo
 
 python link ---- https://www.python.org/downloads/
 
