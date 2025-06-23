@@ -388,7 +388,7 @@
         const wallColorSelect = document.getElementById('wall-color-select');
         const selectEnemyBtn = document.getElementById('select-enemy-btn');
         const enemyColorSelect = document.getElementById('enemy-color-select');
-        const enemySpeedInput = document.getElementById('enemy-speed-input'); // New: Enemy speed input
+        const enemySpeedInput = document.getElementById('enemy-speed-input');
         const selectDoorBtn = document.getElementById('select-door-btn');
         const doorColorSelect = document.getElementById('door-color-select');
         const eraserBtn = document.getElementById('eraser-btn');
@@ -412,7 +412,7 @@
         let selectedWallColor = wallColorSelect.value;
         let selectedPlayerColor = playerColorSelect.value;
         let selectedEnemyColor = enemyColorSelect.value;
-        let selectedEnemySpeed = parseFloat(enemySpeedInput.value); // New: Enemy speed state
+        let selectedEnemySpeed = parseFloat(enemySpeedInput.value);
         let selectedDoorColor = doorColorSelect.value;
 
         // Constants for element sizes
@@ -591,8 +591,8 @@
                 };
                 elements.push(newElement);
             } else if (selectedTool === 'enemy') {
-                const enemySpeed = parseFloat(enemySpeedInput.value); // Get enemy speed
-                 if (isNaN(enemySpeed) || enemySpeed < 0.1 || enemySpeed > 10) { // Validate enemy speed
+                const enemySpeed = parseFloat(enemySpeedInput.value);
+                 if (isNaN(enemySpeed) || enemySpeed < 0.1 || enemySpeed > 10) {
                     showModal("Invalid Enemy Speed", "Please enter an enemy speed between 0.1 and 10.");
                     return;
                 }
@@ -603,7 +603,7 @@
                     width: ENEMY_SIZE,
                     height: ENEMY_SIZE,
                     color: selectedEnemyColor,
-                    enemySpeed: enemySpeed // Store enemy speed
+                    enemySpeed: enemySpeed
                 };
                 elements.push(newElement);
             } else if (selectedTool === 'door') {
@@ -826,6 +826,17 @@
                 playerPlaytest.x += playerPlaytest.speed;
             }
 
+            // Vertical movement (only if gravity is disabled)
+            if (!playerPlaytest.hasGravity) {
+                if (pressedKeys['ArrowUp'] || pressedKeys['w'] || pressedKeys['W']) {
+                    playerPlaytest.y -= playerPlaytest.speed;
+                }
+                if (pressedKeys['ArrowDown'] || pressedKeys['s'] || pressedKeys['S']) {
+                    playerPlaytest.y += playerPlaytest.speed;
+                }
+            }
+
+
             // Vertical movement due to velocity (gravity/jump)
             playerPlaytest.y += playerPlaytest.velocityY;
             
@@ -932,13 +943,13 @@
                         break;
                     }
                 }
-                if (!collidedWithWallOrDoor) { // Only check doors if not already blocked by a wall
+                if (!collidedWithWallOrDoor) {
                     // Enemy collision with Doors (enemies are blocked by doors)
                     for (const door of doorElements) {
                         if (checkCollision(enemyRect, door)) {
                             enemy.x = oldEnemyX;
                             enemy.y = oldEnemyY;
-                            collidedWithWallOrDoor = true; // Mark as collided
+                            collidedWithWallOrDoor = true;
                             break;
                         }
                     }
@@ -957,6 +968,8 @@
                 playerPlaytest.isOnGround = false;
                 playerPlaytest.isJumping = true;
             }
+            // Clear jump key press after processing to prevent multiple jumps from holding
+            // Ensure this happens after the jump check to allow a single jump per press
             if (pressedKeys['ArrowUp']) pressedKeys['ArrowUp'] = false;
             if (pressedKeys['w']) pressedKeys['w'] = false;
             if (pressedKeys['W']) pressedKeys['W'] = false;
@@ -969,7 +982,7 @@
             } else if (playerPlaytest.boundary === 'wrap') {
                 if (playerPlaytest.x > canvas.width) playerPlaytest.x = -playerPlaytest.width;
                 if (playerPlaytest.x + playerPlaytest.width < 0) playerPlaytest.x = canvas.width;
-                if (!playerPlaytest.hasGravity || playerPlaytest.isOnGround) {
+                if (!playerPlaytest.hasGravity || playerPlaytest.isOnGround) { // Vertical wrap also if gravity is off
                     if (playerPlaytest.y > canvas.height) playerPlaytest.y = -playerPlaytest.height;
                     if (playerPlaytest.y + playerPlaytest.height < 0) playerPlaytest.y = canvas.height;
                 }
@@ -1066,7 +1079,7 @@ initial_jump_velocity = -math.sqrt(2 * gravity_acceleration * jump_height_target
 
 
 # Wall properties
-walls = [] # Each wall will be a dictionary: {'rect': pygame.Rect, 'color': (R,G,B)}
+walls = []
 `;
             if (wallElements.length > 0) {
                 wallElements.forEach((wall, index) => {
@@ -1084,14 +1097,14 @@ walls.append(wall_${index}_data)
 
             code += `
 # Enemy properties
-enemies = [] # Each enemy will be a dictionary: {'rect': pygame.Rect, 'color': (R,G,B), 'speed': float}
+enemies = []
 `;
             if (enemyElements.length > 0) {
                 enemyElements.forEach((enemy, index) => {
                     code += `enemy_${index}_data = {
     'rect': pygame.Rect(${enemy.x}, ${enemy.y}, ${enemy.width}, ${enemy.height}),
     'color': hex_to_rgb('${enemy.color}'),
-    'speed': ${enemy.enemySpeed} # Enemy movement speed
+    'speed': ${enemy.enemySpeed}
 }
 enemies.append(enemy_${index}_data)
 `;
@@ -1106,7 +1119,7 @@ enemies.append(enemy_${index}_data)
 
             code += `
 # Door properties
-doors = [] # Players can pass through doors, but enemies cannot.
+doors = []
 `;
             if (doorElements.length > 0) {
                 doorElements.forEach((door, index) => {
@@ -1127,7 +1140,7 @@ doors.append(door_${index}_data)
 running = True
 game_over = False
 clock = pygame.time.Clock()
-FPS = 60 # Frames per second
+FPS = 60
 
 try:
     while running:
@@ -1153,18 +1166,22 @@ try:
         old_player_x = player_x
         old_player_y = player_y
 
+        # --- Player Vertical Movement (Gravity or Free Movement) ---
         if has_gravity:
             player_vel_y += gravity_acceleration
-        else:
-            player_vel_y = 0
-            is_on_ground = False
+            player_y += player_vel_y
+        else: # Free vertical movement if no gravity
+            if keys[pygame.K_UP]:
+                player_y -= player_speed
+            if keys[pygame.K_DOWN]:
+                player_y += player_speed
+            player_vel_y = 0 # Ensure no lingering vertical velocity from previous gravity states
 
-        # --- Player Vertical Movement and Collision Resolution with Walls ---
-        player_y += player_vel_y
         player_rect.topleft = (player_x, player_y)
 
-        is_on_ground = False
+        is_on_ground = False # Reset for current frame
 
+        # Collision with walls (vertical)
         for wall_data in walls:
             wall_rect = wall_data['rect']
             if player_rect.colliderect(wall_rect):
@@ -1180,6 +1197,7 @@ try:
                     player_vel_y = 0
                 player_rect.topleft = (player_x, player_y)
 
+        # Collision with screen boundaries (ground/ceiling)
         if player_y + player_height >= SCREEN_HEIGHT:
             player_y = SCREEN_HEIGHT - player_height
             player_vel_y = 0
@@ -1233,11 +1251,10 @@ try:
             dy = player_y - enemy_rect.y
             distance = math.sqrt(dx*dx + dy*dy)
 
-            if distance > enemy_speed: # Move only if not already very close
-                # Normalize direction vector and move enemy
+            if distance > enemy_speed:
                 enemy_rect.x += (dx / distance) * enemy_speed
                 enemy_rect.y += (dy / distance) * enemy_speed
-            elif distance > 0: # If very close but not zero, snap to player position for smooth stopping
+            elif distance > 0:
                 enemy_rect.x = player_x
                 enemy_rect.y = player_y
 
@@ -1247,16 +1264,16 @@ try:
             for wall_data in walls:
                 wall_rect = wall_data['rect']
                 if enemy_rect.colliderect(wall_rect):
-                    enemy_rect.topleft = (old_enemy_x, old_enemy_y) # Revert position
+                    enemy_rect.topleft = (old_enemy_x, old_enemy_y)
                     collided_with_obstacle = True
                     break
             
             # Check doors (enemies cannot pass through doors)
-            if not collided_with_obstacle: # Only check doors if not already blocked by a wall
+            if not collided_with_obstacle:
                 for door_data in doors:
                     door_rect = door_data['rect']
                     if enemy_rect.colliderect(door_rect):
-                        enemy_rect.topleft = (old_enemy_x, old_enemy_y) # Revert position
+                        enemy_rect.topleft = (old_enemy_x, old_enemy_y)
                         collided_with_obstacle = True
                         break
 
@@ -1264,11 +1281,13 @@ try:
         if player_boundary_behavior == 'wrap':
             if player_x > SCREEN_WIDTH: player_x = -player_width
             if player_x + player_width < 0: player_x = SCREEN_WIDTH
-            if not has_gravity or is_on_ground:
+            # Vertical wrap if gravity is NOT active
+            if not has_gravity:
                 if player_y > SCREEN_HEIGHT: player_y = -player_height
                 if player_y + player_height < 0: player_y = SCREEN_HEIGHT
         elif player_boundary_behavior == 'stop':
             player_x = max(0, min(player_x, SCREEN_WIDTH - player_width))
+            # Vertical stop for player always applies, regardless of gravity
             player_y = max(0, min(player_y, SCREEN_HEIGHT - player_height))
 
 
@@ -1355,7 +1374,7 @@ finally:
         enemyColorSelect.addEventListener('change', (event) => {
             selectedEnemyColor = event.target.value;
         });
-        enemySpeedInput.addEventListener('change', (event) => { // New: Enemy speed input listener
+        enemySpeedInput.addEventListener('change', (event) => {
             selectedEnemySpeed = parseFloat(event.target.value);
         });
         doorColorSelect.addEventListener('change', (event) => {
